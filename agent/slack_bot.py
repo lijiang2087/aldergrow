@@ -6,6 +6,22 @@ import threading
 from agent import config
 from agent.agent_loop import run_one_cycle
 
+# Dedupe: avoid replying twice to the same message (Slack can deliver the same event more than once)
+_replied_ts: set[tuple[str, str]] = set()
+_replied_lock = threading.Lock()
+_MAX_REPLIED = 500  # cap size so the set doesn't grow forever
+
+
+def _already_handled(channel: str, ts: str) -> bool:
+    with _replied_lock:
+        key = (channel, ts)
+        if key in _replied_ts:
+            return True
+        _replied_ts.add(key)
+        if len(_replied_ts) > _MAX_REPLIED:
+            _replied_ts.clear()
+        return False
+
 
 def _strip_mention(text: str, bot_user_id: str) -> str:
     """Remove <@BOT_ID> from the start of text."""
@@ -28,6 +44,8 @@ def _handle_dm(message: dict, say, logger):
         return
     ts = message.get("ts")
     channel = message.get("channel")
+    if _already_handled(channel, ts):
+        return
 
     def run_and_reply():
         try:
@@ -50,13 +68,15 @@ def _handle_app_mention(event: dict, say, client, logger):
     text = (event.get("text") or "").strip()
     if not text:
         return
+    ts = event.get("ts")
+    channel = event.get("channel")
+    if _already_handled(channel, ts):
+        return
     auth = client.auth_test()
     bot_id = auth["user_id"]
     text = _strip_mention(text, bot_id)
     if not text.strip():
         return
-    ts = event.get("ts")
-    channel = event.get("channel")
 
     def run_and_reply():
         try:

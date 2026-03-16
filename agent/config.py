@@ -31,6 +31,13 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 SUBSTACK_SESSION_COOKIE = os.getenv("SUBSTACK_SESSION_COOKIE", "")
 SUBSTACK_PUBLICATION_URL = os.getenv("SUBSTACK_PUBLICATION_URL", "")  # e.g. https://yoursubstack.substack.com
 
+# X/Twitter (for post_to_x). Use the account that will post as Alder.
+# Get these from developer.x.com → your app → Keys and tokens (API Key, Secret; then generate Access Token and Secret).
+X_API_KEY = os.getenv("X_API_KEY", "")           # API Key (consumer key)
+X_API_SECRET = os.getenv("X_API_SECRET", "")     # API Key Secret (consumer secret)
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN", "")
+X_ACCESS_TOKEN_SECRET = os.getenv("X_ACCESS_TOKEN_SECRET", "")
+
 # Paths: life/ is relative to repo root
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LIFE_ROOT = REPO_ROOT / "life"

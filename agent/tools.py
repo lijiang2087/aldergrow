@@ -10,6 +10,10 @@ from agent.config import (
     TAVILY_API_KEY,
     SUBSTACK_SESSION_COOKIE,
     SUBSTACK_PUBLICATION_URL,
+    X_API_KEY,
+    X_API_SECRET,
+    X_ACCESS_TOKEN,
+    X_ACCESS_TOKEN_SECRET,
 )
 
 
@@ -144,6 +148,32 @@ def get_payment_info() -> str:
     return read_file("identity/wallet.md")
 
 
+def post_to_x(text: str) -> str:
+    """Post a tweet from Alder's X/Twitter account. Text must be ≤280 characters. Use when the user or mission asks to post to X/Twitter."""
+    if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET]):
+        raise RuntimeError(
+            "X/Twitter is not configured. Set X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, and X_ACCESS_TOKEN_SECRET in .env. "
+            "See README for how to connect Alder's X account."
+        )
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("Tweet text cannot be empty.")
+    if len(text) > 280:
+        raise ValueError(f"Tweet must be ≤280 characters (got {len(text)}).")
+    import tweepy
+    client = tweepy.Client(
+        consumer_key=X_API_KEY,
+        consumer_secret=X_API_SECRET,
+        access_token=X_ACCESS_TOKEN,
+        access_token_secret=X_ACCESS_TOKEN_SECRET,
+    )
+    resp = client.create_tweet(text=text)
+    if resp and getattr(resp, "data", None):
+        tid = resp.data.get("id", "")
+        return f"Posted to X (tweet id: {tid})."
+    return "Posted to X."
+
+
 def send_slack_message(text: str, channel: str | None = None) -> str:
     """Send a message to Slack. Uses SLACK_CHANNEL_ID if channel is not provided."""
     if not SLACK_BOT_TOKEN:
@@ -242,6 +272,15 @@ TOOL_DEFINITIONS: list[dict] = [
         "description": "Get USDC payment instructions (addresses for Ethereum, Base, Arbitrum + memo instruction). Use when someone asks how to pay Alder in USDC or for wallet addresses.",
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
+    {
+        "name": "post_to_x",
+        "description": "Post a tweet from Alder's X/Twitter account. Use when the user or mission asks to post to X/Twitter. Keep text ≤280 characters.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"text": {"type": "string", "description": "Tweet text (max 280 characters)."}},
+            "required": ["text"],
+        },
+    },
 ]
 
 
@@ -273,4 +312,6 @@ def run_tool(name: str, arguments: dict) -> str:
         )
     if name == "get_payment_info":
         return get_payment_info()
+    if name == "post_to_x":
+        return post_to_x(text=arguments["text"])
     raise ValueError(f"Unknown tool: {name}")

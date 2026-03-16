@@ -23,7 +23,7 @@ python -m agent.agent_loop --daemon
 python -m agent.slack_bot
 ```
 
-**Env vars** (in `.env`): LLM keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`); Slack (`SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_CHANNEL_ID`); optional `TAVILY_API_KEY` for web search; optional `SUBSTACK_SESSION_COOKIE` / `SUBSTACK_PUBLICATION_URL` for Substack.
+**Env vars** (in `.env`): LLM keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`); Slack (`SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_CHANNEL_ID`); optional `TAVILY_API_KEY` for web search; optional `SUBSTACK_SESSION_COOKIE` / `SUBSTACK_PUBLICATION_URL` for Substack; optional X/Twitter (`X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`) for posting as Alder.
 
 ## Chat with Alder in Slack
 
@@ -41,6 +41,40 @@ Run the Slack bot to talk to Alder in Slack. He replies in thread so you can hav
    python -m agent.slack_bot
    ```
    Then DM the bot or @mention it in a channel; Alder will reply in thread.
+
+## Connect Alder's X/Twitter account
+
+To let Alder post tweets (e.g. via the `post_to_x` tool when you ask in Slack or in the daemon), connect the X account that will represent Alder:
+
+1. **Create or use an X account** that will be “Alder” (e.g. @AlderCapital or your chosen handle). Log in at [x.com](https://x.com).
+
+2. **Developer access**
+   - Go to [developer.x.com](https://developer.x.com) and sign in with that account (or the one that will own the app).
+   - Create a **Project** and an **App** (or use an existing app).
+   - In the app, open **Settings → User authentication** and turn it **On**. Set type to “Read and write” (so the app can post). Set Callback URL to something like `https://localhost` (we only need the tokens once; you can use a placeholder). Save.
+
+3. **Keys and tokens**
+   - In the app, go to **Keys and tokens**.
+   - **Consumer keys**: note the **API Key** and **API Key Secret** (create if needed).
+   - **Authentication**: under “Access Token and Secret”, click **Generate**. Authorize the app with the account that should post as Alder. Copy the **Access Token** and **Access Token Secret**.
+
+4. **Add these 4 lines to `.env`** (all from the **OAuth 1.0 Keys** section only; ignore OAuth 2.0 / Client ID / Client Secret):
+
+   | # | In `.env` | In X Developer Portal (Keys and tokens → OAuth 1.0 Keys) |
+   |---|-----------|----------------------------------------------------------------|
+   | 1 | `X_API_KEY=` | **Consumer Key** (click Show to reveal) |
+   | 2 | `X_API_SECRET=` | **Consumer Secret** (same section; Show or Regenerate) |
+   | 3 | `X_ACCESS_TOKEN=` | **Access Token** (click Generate for “For @AlderGrow”; copy the token) |
+   | 4 | `X_ACCESS_TOKEN_SECRET=` | **Access Token Secret** (shown once when you Generate the Access Token; copy it) |
+
+   Example (replace with your real values; X labels the first two “Consumer Key” and “Consumer Secret”):
+   ```bash
+   X_API_KEY=your_consumer_key_here
+   X_API_SECRET=your_consumer_secret_here
+   X_ACCESS_TOKEN=your_access_token_here
+   X_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+   ```
+   Keep these secret; don’t commit `.env`. Restart the Slack bot and/or daemon so they pick up the new vars. Alder can then use the `post_to_x` tool when you ask him to post to X/Twitter.
 
 ## Architecture
 
