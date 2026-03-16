@@ -188,6 +188,7 @@ def send_slack_message(text: str, channel: str | None = None) -> str:
 
 
 # Tool definitions for LLM function calling (Anthropic and OpenAI compatible shape)
+# Keep post_to_x near the top so the model reliably sees it in the tool list.
 TOOL_DEFINITIONS: list[dict] = [
     {
         "name": "send_slack_message",
@@ -198,6 +199,15 @@ TOOL_DEFINITIONS: list[dict] = [
                 "text": {"type": "string", "description": "The message text to send to Slack"},
                 "channel": {"type": "string", "description": "Optional Slack channel ID or name (e.g. #general). Omit to use SLACK_CHANNEL_ID from .env."},
             },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "post_to_x",
+        "description": "Post a tweet from Alder's X/Twitter account. Use when the user or mission asks to post to X/Twitter. Keep text ≤280 characters.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"text": {"type": "string", "description": "Tweet text (max 280 characters)."}},
             "required": ["text"],
         },
     },
@@ -271,15 +281,6 @@ TOOL_DEFINITIONS: list[dict] = [
         "name": "get_payment_info",
         "description": "Get USDC payment instructions (addresses for Ethereum, Base, Arbitrum + memo instruction). Use when someone asks how to pay Alder in USDC or for wallet addresses.",
         "input_schema": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "post_to_x",
-        "description": "Post a tweet from Alder's X/Twitter account. Use when the user or mission asks to post to X/Twitter. Keep text ≤280 characters.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"text": {"type": "string", "description": "Tweet text (max 280 characters)."}},
-            "required": ["text"],
-        },
     },
 ]
 
