@@ -114,9 +114,14 @@ def main() -> None:
     client = WebClient(token=config.SLACK_BOT_TOKEN, ssl=ssl_ctx)
     app = App(token=config.SLACK_BOT_TOKEN, client=client)
 
-    @app.message(_is_dm)
-    def on_dm(message, say, context):
-        _handle_dm(message, say, context.logger)
+    @app.event("message")
+    def on_message(event, say, context):
+        # Only handle DMs. (Bolt's @app.message(callable) treats the arg as a string pattern and breaks.)
+        if event.get("bot_id"):
+            return
+        if event.get("channel_type") != "im":
+            return
+        _handle_dm(event, say, context.logger)
 
     @app.event("app_mention")
     def on_mention(event, say, context):
