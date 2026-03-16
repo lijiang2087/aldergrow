@@ -181,8 +181,11 @@ def send_slack_message(text: str, channel: str | None = None) -> str:
     ch = channel or SLACK_CHANNEL_ID
     if not ch:
         raise ValueError("No channel specified and SLACK_CHANNEL_ID is not set in .env")
+    import ssl
+    import certifi
     from slack_sdk import WebClient
-    client = WebClient(token=SLACK_BOT_TOKEN)
+    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+    client = WebClient(token=SLACK_BOT_TOKEN, ssl=ssl_ctx)
     client.chat_postMessage(channel=ch, text=text)
     return "Message sent to Slack"
 
