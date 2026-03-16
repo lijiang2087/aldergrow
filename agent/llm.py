@@ -75,6 +75,8 @@ def _complete_with_tools_anthropic(
     system: str, user: str, tool_definitions: list[dict], run_tool: callable, max_rounds: int
 ) -> str:
     from anthropic import Anthropic
+    tool_names = [t.get("name", "") for t in tool_definitions]
+    print(f"[alder] Tools sent to LLM ({len(tool_names)}): {tool_names}", flush=True)
     client = Anthropic(api_key=config.ANTHROPIC_API_KEY)
     messages: list[dict] = [{"role": "user", "content": user}]
     for _ in range(max_rounds):

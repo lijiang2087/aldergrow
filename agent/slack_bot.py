@@ -45,6 +45,7 @@ def _handle_dm(message: dict, say, logger):
     ts = message.get("ts")
     channel = message.get("channel")
     if _already_handled(channel, ts):
+        logger.info("Skipping duplicate DM channel=%s ts=%s", channel, ts)
         return
 
     def run_and_reply():
@@ -71,6 +72,7 @@ def _handle_app_mention(event: dict, say, client, logger):
     ts = event.get("ts")
     channel = event.get("channel")
     if _already_handled(channel, ts):
+        logger.info("Skipping duplicate @mention channel=%s ts=%s", channel, ts)
         return
     auth = client.auth_test()
     bot_id = auth["user_id"]
