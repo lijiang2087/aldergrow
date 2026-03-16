@@ -28,10 +28,19 @@ def run_one_cycle(task: str | None = None) -> str:
     else:
         user_message = task
 
+    # When the task mentions Twitter/X, put post_to_x first so the model reliably sees it (some APIs truncate the tool list).
+    tool_definitions = list(agent_tools.TOOL_DEFINITIONS)
+    task_lower = task.lower()
+    if any(kw in task_lower for kw in ("twitter", "tweet", " post to x", "post to x", " x ", "on x,")):
+        post_to_x_def = next((t for t in tool_definitions if t["name"] == "post_to_x"), None)
+        if post_to_x_def:
+            tool_definitions = [t for t in tool_definitions if t["name"] != "post_to_x"]
+            tool_definitions.insert(0, post_to_x_def)
+
     reply = llm.complete_with_tools(
         system=mission,
         user=user_message,
-        tool_definitions=agent_tools.TOOL_DEFINITIONS,
+        tool_definitions=tool_definitions,
         run_tool=agent_tools.run_tool,
         max_rounds=20,
     )
