@@ -1,0 +1,13 @@
+.env
+.env.*
+.git
+__pycache__
+*.pyc
+.venv
+venv
+.gitignore
+README.md
+index.html
+*.md
+.cursor
+.plans
