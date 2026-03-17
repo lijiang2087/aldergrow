@@ -4,6 +4,6 @@
     "name": "Sample Research Report",
     "description": "A sample digital product from Alder.",
     "price_cents": 200,
-    "file": "shop/files/sample-report.md"
+    "file": "shop/files/sample-report.pdf"
   }
 ]
