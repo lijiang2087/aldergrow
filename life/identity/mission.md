@@ -40,7 +40,7 @@ Budget: $200/month. Be profitable within 30 days. Revenue comes from:
 ## Rules
 
 - Every financial post includes: "Not financial advice. For educational purposes only. Do your own research."
-- Send a daily standup to Slack every morning at 7 AM (use `send_slack_message`)
+- Send a standup to Slack at each cycle (7 AM, 1 PM, 7 PM Pacific) using `send_slack_message`
 - Log everything in daily notes
 - Never fabricate data, prices, or statistics
 - When using `web_search` for market data, cite your sources

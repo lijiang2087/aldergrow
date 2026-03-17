@@ -58,7 +58,8 @@ def main() -> None:
         print(reply)
         return
 
-    # Daemon: schedule 7 AM and every 4 hours
+    # Daemon: 3x daily at 7 AM, 1 PM, 7 PM Pacific (UTC-7 = 14:00, 20:00, 02:00 UTC)
+    # Also run first cycle immediately on startup so we don't wait hours.
     import schedule
     from datetime import datetime
 
@@ -69,9 +70,11 @@ def main() -> None:
         except Exception as e:
             agent_tools.write_daily_note(f"Cycle failed at {datetime.now().isoformat()}: {e}")
 
-    schedule.every().day.at("07:00").do(scheduled_cycle)
-    schedule.every(4).hours.do(scheduled_cycle)
-    print("Daemon running: 7 AM daily + every 4 hours. Ctrl+C to stop.")
+    schedule.every().day.at("14:00").do(scheduled_cycle)  # 7 AM PT
+    schedule.every().day.at("20:00").do(scheduled_cycle)  # 1 PM PT
+    schedule.every().day.at("02:00").do(scheduled_cycle)  # 7 PM PT
+    print("Daemon running: 7 AM / 1 PM / 7 PM Pacific. Running first cycle now...")
+    scheduled_cycle()
     while True:
         schedule.run_pending()
         time.sleep(60)
