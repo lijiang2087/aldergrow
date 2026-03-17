@@ -7,7 +7,5 @@ __pycache__
 venv
 .gitignore
 README.md
-index.html
-*.md
 .cursor
 .plans
