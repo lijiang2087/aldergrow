@@ -148,6 +148,27 @@ def get_payment_info() -> str:
     return read_file("identity/wallet.md")
 
 
+def _save_tweet(tweet_id: str, text: str) -> None:
+    """Persist a posted tweet to life/x_posts.json so the website can display it."""
+    import json
+    from datetime import datetime
+    posts_file = LIFE_ROOT / "x_posts.json"
+    posts = []
+    if posts_file.is_file():
+        try:
+            posts = json.loads(posts_file.read_text(encoding="utf-8"))
+        except Exception:
+            posts = []
+    posts.insert(0, {
+        "id": tweet_id,
+        "text": text,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "url": f"https://x.com/AlderGrow/status/{tweet_id}",
+    })
+    posts = posts[:50]
+    posts_file.write_text(json.dumps(posts, indent=2), encoding="utf-8")
+
+
 def post_to_x(text: str) -> str:
     """Post a tweet from Alder's X/Twitter account. Text must be ≤280 characters. Use when the user or mission asks to post to X/Twitter."""
     if not all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET]):
@@ -168,8 +189,11 @@ def post_to_x(text: str) -> str:
         access_token_secret=X_ACCESS_TOKEN_SECRET,
     )
     resp = client.create_tweet(text=text)
+    tid = ""
     if resp and getattr(resp, "data", None):
         tid = resp.data.get("id", "")
+    if tid:
+        _save_tweet(str(tid), text)
         return f"Posted to X (tweet id: {tid})."
     return "Posted to X."
 

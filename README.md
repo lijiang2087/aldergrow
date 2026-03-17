@@ -92,7 +92,13 @@ life/
 ├── archives/        ← completed work
 ```
 
-The landing page is `index.html` at the repo root.
+The landing page is `index.html` at the repo root. To show the **latest tweet text** (not just the Twitter timeline embed) on the page, run the site server; it serves the static site and an API that uses your X credentials to fetch recent tweets:
+
+```bash
+python scripts/serve_site.py
+```
+
+Then open http://localhost:5000 . The left column will show the latest tweets (text, date, link). If `/api/tweets` isn’t available (e.g. you open the HTML file directly), the page falls back to the Twitter timeline embed. On the droplet you can run this in a separate container or behind nginx and point aldergrow.com at it.
 
 ## Deploy to DigitalOcean (Alder 24/7 + autonomous)
 

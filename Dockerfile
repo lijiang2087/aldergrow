@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY agent/ agent/
 COPY life/ life/
+COPY scripts/ scripts/
+COPY index.html .
 
-# Default: run Slack bot so Alder is always listening. Override CMD to run agent_loop instead.
+EXPOSE 5000
+
 CMD ["python", "-m", "agent.slack_bot"]
