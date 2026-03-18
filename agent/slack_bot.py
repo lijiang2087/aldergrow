@@ -38,7 +38,7 @@ def _is_dm(message: dict, body: dict) -> bool:
 
 
 def _handle_dm(message: dict, say, logger):
-    """DM received: run agent loop with message text as task, reply in thread."""
+    """DM received: run agent loop with message text as task, reply inline in the DM."""
     # Skip Slack-generated message subtypes (joins, etc.)
     st = message.get("subtype") or ""
     if st in ("channel_join", "channel_leave", "group_join", "group_leave", "message_changed", "message_deleted"):
@@ -52,25 +52,28 @@ def _handle_dm(message: dict, say, logger):
     channel = message.get("channel")
     if _already_handled(channel, ts):
         logger.info("Skipping duplicate DM channel=%s ts=%s", channel, ts)
+        print(f"[alder-slack] Skipping duplicate DM channel={channel} ts={ts}", flush=True)
         return
-    # Stay in the same DM thread: if user replied in a thread, keep replying there
-    thread_ts = message.get("thread_ts") or ts
+    print(f"[alder-slack] Received DM channel={channel} ts={ts} text={text[:80]!r}", flush=True)
 
     def run_and_reply():
         try:
             logger.info("Running agent for DM: %s...", text[:50])
+            print(f"[alder-slack] Running agent for DM: {text[:80]!r}", flush=True)
             reply_text = run_one_cycle(text)
             # Slack truncates around 40k; split if needed
             if len(reply_text) > 35000:
                 reply_text = reply_text[:35000] + "\n\n_(truncated)_"
-            say(text=reply_text, thread_ts=thread_ts)
+            say(text=reply_text)
             logger.info("Reply sent.")
+            print("[alder-slack] DM reply sent.", flush=True)
         except Exception as e:
             logger.exception("Agent error: %s", e)
             try:
-                say(text=f"Error: {e}", thread_ts=thread_ts)
+                say(text=f"Error: {e}")
             except Exception:
                 pass
+            print(f"[alder-slack] DM error: {e}", flush=True)
 
     threading.Thread(target=run_and_reply, daemon=True).start()
 
@@ -84,6 +87,7 @@ def _handle_app_mention(event: dict, say, client, logger):
     channel = event.get("channel")
     if _already_handled(channel, ts):
         logger.info("Skipping duplicate @mention channel=%s ts=%s", channel, ts)
+        print(f"[alder-slack] Skipping duplicate mention channel={channel} ts={ts}", flush=True)
         return
     auth = client.auth_test()
     bot_id = auth["user_id"]
@@ -94,15 +98,18 @@ def _handle_app_mention(event: dict, say, client, logger):
     def run_and_reply():
         try:
             logger.info("Running agent for @mention: %s...", text[:50])
+            print(f"[alder-slack] Running agent for mention: {text[:80]!r}", flush=True)
             reply_text = run_one_cycle(text)
             say(text=reply_text, thread_ts=ts)
             logger.info("Reply sent.")
+            print("[alder-slack] Mention reply sent.", flush=True)
         except Exception as e:
             logger.exception("Agent error: %s", e)
             try:
                 say(text=f"Error: {e}", thread_ts=ts)
             except Exception:
                 pass
+            print(f"[alder-slack] Mention error: {e}", flush=True)
 
     threading.Thread(target=run_and_reply, daemon=True).start()
 
@@ -136,6 +143,11 @@ def main() -> None:
         )
         if not is_dm:
             return
+        print(
+            f"[alder-slack] message event channel={event.get('channel')} ts={event.get('ts')} "
+            f"thread_ts={event.get('thread_ts')} subtype={event.get('subtype')!r}",
+            flush=True,
+        )
         _handle_dm(event, say, context.logger)
 
     @app.event("app_mention")
