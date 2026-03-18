@@ -39,7 +39,13 @@ def _is_dm(message: dict, body: dict) -> bool:
 
 def _handle_dm(message: dict, say, logger):
     """DM received: run agent loop with message text as task, reply in thread."""
+    # Skip Slack-generated message subtypes (joins, etc.)
+    st = message.get("subtype") or ""
+    if st in ("channel_join", "channel_leave", "group_join", "group_leave", "message_changed", "message_deleted"):
+        return
     text = (message.get("text") or "").strip()
+    if not text and message.get("files"):
+        text = "[User shared a file or attachment — acknowledge and help if you can.]"
     if not text:
         return
     ts = message.get("ts")
@@ -47,17 +53,22 @@ def _handle_dm(message: dict, say, logger):
     if _already_handled(channel, ts):
         logger.info("Skipping duplicate DM channel=%s ts=%s", channel, ts)
         return
+    # Stay in the same DM thread: if user replied in a thread, keep replying there
+    thread_ts = message.get("thread_ts") or ts
 
     def run_and_reply():
         try:
             logger.info("Running agent for DM: %s...", text[:50])
             reply_text = run_one_cycle(text)
-            say(text=reply_text, thread_ts=ts)
+            # Slack truncates around 40k; split if needed
+            if len(reply_text) > 35000:
+                reply_text = reply_text[:35000] + "\n\n_(truncated)_"
+            say(text=reply_text, thread_ts=thread_ts)
             logger.info("Reply sent.")
         except Exception as e:
             logger.exception("Agent error: %s", e)
             try:
-                say(text=f"Error: {e}", thread_ts=ts)
+                say(text=f"Error: {e}", thread_ts=thread_ts)
             except Exception:
                 pass
 
@@ -116,10 +127,14 @@ def main() -> None:
 
     @app.event("message")
     def on_message(event, say, context):
-        # Only handle DMs. (Bolt's @app.message(callable) treats the arg as a string pattern and breaks.)
+        # Only handle DMs. (channel_type sometimes missing in thread replies — DM channels start with D)
         if event.get("bot_id"):
             return
-        if event.get("channel_type") != "im":
+        ch = event.get("channel") or ""
+        is_dm = event.get("channel_type") == "im" or (
+            ch.startswith("D") and not ch.startswith("C")
+        )
+        if not is_dm:
             return
         _handle_dm(event, say, context.logger)
 

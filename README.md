@@ -154,6 +154,8 @@ docker ps
 
 You should see `alder-slack` and `alder-daemon`. Alder is now live: chat in Slack anytime; he’ll also run on schedule and can write Substack posts, log daily notes, etc.
 
+**Shared `life/`** — All three containers mount the host’s `life/` folder (`./life` on the droplet). Alder’s Slack/daemon writes and the website read the same files (tweets log, shop products, daily notes). Edit shop files on the server under `/root/aldergrow/life/` or let Alder update them via tools.
+
 **Updates later**
 
 ```bash
