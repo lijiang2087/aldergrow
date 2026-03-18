@@ -6,7 +6,16 @@ from agent import config
 def complete(system: str, user: str) -> str:
     """Send system + user to the first available LLM; return reply text."""
     if config.ANTHROPIC_API_KEY:
-        return _complete_anthropic(system, user)
+        try:
+            return _complete_anthropic(system, user)
+        except Exception as e:
+            err = str(e).lower()
+            if not any(
+                x in err
+                for x in ("rate_limit", "429", "credit", "balance", "billing", "quota", "insufficient", "payment")
+            ):
+                raise
+            print(f"[alder] Anthropic failed ({e!s}); trying OpenAI/Gemini.", flush=True)
     if config.OPENAI_API_KEY:
         return _complete_openai(system, user)
     if config.GEMINI_API_KEY:
@@ -23,9 +32,29 @@ def complete_with_tools(
     run_tool: callable,
     max_rounds: int = 10,
 ) -> str:
-    """Call LLM with tools; run tool calls and re-call until final text. Uses Anthropic or OpenAI only (Gemini falls back to no tools)."""
+    """Call LLM with tools. Tries Anthropic first; on quota/billing errors falls back to OpenAI, then Gemini (no tools)."""
     if config.ANTHROPIC_API_KEY:
-        return _complete_with_tools_anthropic(system, user, tool_definitions, run_tool, max_rounds)
+        try:
+            return _complete_with_tools_anthropic(system, user, tool_definitions, run_tool, max_rounds)
+        except Exception as e:
+            err = str(e).lower()
+            retryable = any(
+                x in err
+                for x in (
+                    "rate_limit",
+                    "429",
+                    "credit",
+                    "balance",
+                    "overloaded",
+                    "billing",
+                    "quota",
+                    "insufficient",
+                    "payment",
+                )
+            )
+            if not retryable:
+                raise
+            print(f"[alder] Anthropic failed ({e!s}); falling back to next provider.", flush=True)
     if config.OPENAI_API_KEY:
         return _complete_with_tools_openai(system, user, tool_definitions, run_tool, max_rounds)
     if config.GEMINI_API_KEY:
