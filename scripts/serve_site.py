@@ -153,6 +153,133 @@ def download(product_id):
     return send_from_directory(str(file_path.parent), file_path.name, as_attachment=True)
 
 
+def _load_reports():
+    import json
+    mf = REPO_ROOT / "life" / "reports" / "manifest.json"
+    if mf.is_file():
+        try:
+            return json.loads(mf.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return []
+
+
+@app.route("/api/verify-report-access")
+def api_verify_report_access():
+    """Verify Stripe session_id grants access to report_id. Session ID = permanent token."""
+    import stripe
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    session_id = request.args.get("session_id", "")
+    report_id = request.args.get("report_id", "")
+    if not session_id or not report_id or not stripe.api_key:
+        return jsonify({"access": False}), 200
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        ok = (
+            session.payment_status == "paid"
+            and session.metadata.get("product_id") == report_id
+        )
+        return jsonify({"access": bool(ok)}), 200
+    except Exception:
+        return jsonify({"access": False}), 200
+
+
+@app.route("/api/checkout-report", methods=["POST"])
+def api_checkout_report():
+    """Create Stripe Checkout Session for a research report. Redirects to report URL with token on success."""
+    import stripe
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not stripe.api_key:
+        return jsonify({"error": "Stripe not configured"}), 500
+    data = request.get_json(force=True)
+    report_id = data.get("report_id", "")
+    reports = _load_reports()
+    report = next((r for r in reports if r.get("slug") == report_id), None)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    base = request.host_url.rstrip("/")
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": report["price_cents"],
+                "product_data": {"name": f"Research Report: {report['title']}"},
+            },
+            "quantity": 1,
+        }],
+        mode="payment",
+        metadata={"product_id": report_id},
+        success_url=base + f"/reports/{report_id}?token={{CHECKOUT_SESSION_ID}}",
+        cancel_url=base + f"/reports/{report_id}",
+    )
+    return jsonify({"url": session.url}), 200
+
+
+@app.route("/reports")
+def reports_index():
+    """List all research reports — premium dark theme matching report pages."""
+    reports = _load_reports()
+    items = []
+    for r in reports:
+        thesis = (r.get("thesis") or "")[:80]
+        if thesis:
+            thesis += "…"
+        price = r.get("price_cents", 600) / 100
+        items.append(
+            f'<a href="/reports/{r["slug"]}" class="report-card">'
+            f'<span class="report-ticker">{r.get("ticker", "")}</span>'
+            f'<h3 class="report-title">{r["title"]}</h3>'
+            f'<p class="report-thesis">{thesis}</p>'
+            f'<span class="report-price">${price:.0f}</span>'
+            f'</a>'
+        )
+    html = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Reports — Alder Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--surface:#111113;--surface-2:#18181b;--border:#27272a;--text:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;--accent:#c8a24e;--serif:'DM Serif Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+.topbar{border-bottom:1px solid var(--border);padding:16px 0}
+.topbar-inner{max-width:720px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-family:var(--mono);font-size:13px;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;font-weight:500}
+.brand-sub{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.container{max-width:720px;margin:0 auto;padding:48px 24px}
+h1{font-family:var(--serif);font-size:36px;margin-bottom:8px;letter-spacing:-0.02em}
+.sub{font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-bottom:40px}
+.report-grid{display:grid;gap:24px}
+.report-card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:28px;text-decoration:none;color:inherit;transition:border-color .2s,box-shadow .2s}
+.report-card:hover{border-color:var(--accent);box-shadow:0 0 0 1px rgba(200,162,78,0.2)}
+.report-ticker{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--accent);text-transform:uppercase}
+.report-title{font-family:var(--serif);font-size:22px;margin:8px 0 12px;line-height:1.3}
+.report-thesis{color:var(--text-secondary);font-size:15px;line-height:1.6;margin-bottom:16px}
+.report-price{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent)}
+.back{margin-top:48px;font-size:14px}.back a{color:var(--text-muted);text-decoration:none}.back a:hover{color:var(--accent)}
+</style></head>
+<body>
+<div class="topbar"><div class="topbar-inner"><span class="brand">Alder Capital</span><span class="brand-sub">Independent Research</span></div></div>
+<div class="container">
+<h1>Research Reports</h1>
+<p class="sub">Pay-per-view · Permanent access</p>
+<div class="report-grid">""" + "".join(items) + """</div>
+<p class="back"><a href="/">← Back to aldergrow</a></p>
+</div></body></html>"""
+    return html
+
+
+@app.route("/reports/<slug>")
+def report_page(slug):
+    """Serve a research report HTML page (paywalled)."""
+    reports_dir = REPO_ROOT / "life" / "reports"
+    path = reports_dir / f"{slug}.html"
+    if not path.is_file():
+        abort(404)
+    return send_from_directory(str(reports_dir), f"{slug}.html")
+
+
 @app.route("/")
 def index():
     return send_from_directory(REPO_ROOT, "index.html")
