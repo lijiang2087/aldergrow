@@ -164,6 +164,26 @@ def _load_reports():
     return []
 
 
+def _valid_promo_code(code: str) -> bool:
+    """Check promo code. Override via PROMO_CODE env var."""
+    expected = os.environ.get("PROMO_CODE", "aldercapital2026")
+    return code and code.strip().lower() == expected.strip().lower()
+
+
+@app.route("/api/verify-promo")
+def api_verify_promo():
+    """Verify promotional code for report access. Returns {access: true} if valid."""
+    code = request.args.get("code", "")
+    report_id = request.args.get("report_id", "")
+    reports = _load_reports()
+    report = next((r for r in reports if r.get("slug") == report_id), None)
+    if not report_id or not report:
+        return jsonify({"access": False}), 200
+    if _valid_promo_code(code):
+        return jsonify({"access": True}), 200
+    return jsonify({"access": False}), 200
+
+
 @app.route("/api/verify-report-access")
 def api_verify_report_access():
     """Verify Stripe session_id grants access to report_id. Session ID = permanent token."""

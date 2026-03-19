@@ -355,6 +355,44 @@
     opacity: 0.7;
     cursor: wait;
   }
+  .paywall-divider {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 20px 0 12px;
+    font-family: var(--mono);
+  }
+  .paywall-promo {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .promo-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .promo-input::placeholder {
+    color: var(--text-muted);
+  }
+  .promo-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .promo-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .paywall-features {
     margin-top: 20px;
     font-size: 12px;
@@ -497,6 +535,11 @@
         <div class="paywall-price">$6</div>
         <div class="paywall-price-sub">One-time purchase · Permanent access</div>
         <button class="paywall-btn" id="buy-btn" onclick="handlePurchase()">Buy This Report</button>
+        <div class="paywall-divider">or</div>
+        <div class="paywall-promo">
+          <input type="text" id="promo-input" placeholder="Promo code" class="promo-input">
+          <button type="button" class="promo-btn" onclick="handlePromo()">Apply</button>
+        </div>
         <div class="paywall-features">Secure payment via Stripe · Instant access · No subscription</div>
       </div>
     </div>
@@ -526,7 +569,9 @@
           .catch(function() {});
       } else {
         var saved = localStorage.getItem('report_' + REPORT_ID);
-        if (saved) {
+        if (saved === 'promo') {
+          unlockReport();
+        } else if (saved) {
           fetch('/api/verify-report-access?session_id=' + encodeURIComponent(saved) + '&report_id=' + encodeURIComponent(REPORT_ID))
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -540,6 +585,23 @@
     function unlockReport() {
       document.getElementById('paywall').classList.add('unlocked');
     }
+
+    window.handlePromo = function() {
+      var input = document.getElementById('promo-input');
+      var code = input ? input.value.trim() : '';
+      if (!code) { alert('Enter a promo code'); return; }
+      fetch('/api/verify-promo?code=' + encodeURIComponent(code) + '&report_id=' + encodeURIComponent(REPORT_ID))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.access) {
+            unlockReport();
+            localStorage.setItem('report_' + REPORT_ID, 'promo');
+          } else {
+            alert('Invalid promo code');
+          }
+        })
+        .catch(function() { alert('Could not verify promo code'); });
+    };
 
     window.handlePurchase = function() {
       var btn = document.getElementById('buy-btn');
