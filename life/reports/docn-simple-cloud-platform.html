@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOCN: Simple Cloud for the AI Build — Alder Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface-2: #18181b;
+    --border: #27272a;
+    --border-light: #3f3f46;
+    --text: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --accent: #c8a24e;
+    --accent-dim: #a6882e;
+    --accent-glow: rgba(200, 162, 78, 0.12);
+    --green: #4ade80;
+    --red: #f87171;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    margin-bottom: 48px;
+  }
+  .topbar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .ticker-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .ticker {
+    font-family: var(--serif);
+    font-size: 64px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .company-name {
+    font-size: 18px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .report-date {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 32px;
+  }
+
+  .data-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+  .data-cell {
+    background: var(--surface);
+    padding: 16px 14px;
+    text-align: center;
+  }
+  .data-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .data-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .data-value.green { color: var(--green); }
+  .data-value.amber { color: var(--accent); }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 28px;
+    color: var(--text);
+    margin-bottom: 20px;
+    margin-top: 48px;
+    letter-spacing: -0.01em;
+  }
+  h2::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 2px;
+    background: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .prose {
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 24px;
+  }
+  .prose strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .four-p {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .four-p-item {
+    background: var(--surface);
+    padding: 24px;
+  }
+  .four-p-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .four-p-text {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .trade-box {
+    border: 1px solid var(--accent-dim);
+    border-radius: 8px;
+    background: var(--accent-glow);
+    padding: 32px;
+    margin: 32px 0;
+  }
+  .trade-box h3 {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+  .trade-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: 15px;
+  }
+  .trade-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    min-width: 110px;
+    padding-top: 2px;
+    font-weight: 500;
+  }
+  .trade-text {
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .catalyst {
+    border-left: 3px solid var(--accent);
+    padding: 20px 24px;
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    margin: 32px 0;
+  }
+  .catalyst-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .catalyst p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .pure-play {
+    text-align: center;
+    padding: 48px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+  .pure-play-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .pure-play-ticker {
+    font-family: var(--serif);
+    font-size: 36px;
+    color: var(--accent);
+  }
+
+  .disclaimer {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding: 24px 0 48px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+
+  .paywall-gate {
+    position: relative;
+  }
+  .paywall-blur {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .paywall-overlay {
+    position: absolute;
+    top: 0;
+    left: -24px;
+    right: -24px;
+    bottom: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 80px;
+    z-index: 10;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg) 30%);
+  }
+  .paywall-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .paywall-card h3 {
+    font-family: var(--serif);
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .paywall-card p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .paywall-price {
+    font-family: var(--mono);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .paywall-price-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+  }
+  .paywall-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 48px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .paywall-btn:hover {
+    background: #d4af5a;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(200, 162, 78, 0.25);
+  }
+  .paywall-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+  .paywall-features {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  .unlocked .paywall-blur { filter: none; user-select: auto; pointer-events: auto; opacity: 1; }
+  .unlocked .paywall-overlay { display: none; }
+
+  @media (max-width: 640px) {
+    .ticker { font-size: 48px; }
+    .data-strip { grid-template-columns: repeat(3, 1fr); }
+    .data-strip .data-cell:nth-child(4),
+    .data-strip .data-cell:nth-child(5) { grid-column: span 1; }
+    .trade-row { flex-direction: column; gap: 4px; }
+    .trade-label { min-width: unset; }
+    .paywall-card { margin: 0 16px; padding: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">Alder Capital</div>
+    <div class="brand-sub">Independent Research</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="ticker-row">
+    <div class="ticker">DOCN</div>
+    <div class="company-name">DigitalOcean Holdings</div>
+  </div>
+  <div class="report-date">RESEARCH REPORT &nbsp;·&nbsp; MARCH 18, 2026</div>
+
+  <div class="data-strip">
+    <div class="data-cell">
+      <div class="data-label">Price</div>
+      <div class="data-value">$75</div>
+    </div>
+    <div class="data-cell">
+      <div class="data-label">Mkt Cap</div>
+      <div class="data-value">$7B</div>
+    </div>
+    <div class="data-cell">
+      <div class="data-label">P/S</div>
+      <div class="data-value">8.4x</div>
+    </div>
+    <div class="data-cell">
+      <div class="data-label">30d Move</div>
+      <div class="data-value amber">+20%</div>
+    </div>
+    <div class="data-cell">
+      <div class="data-label">China Rev</div>
+      <div class="data-value green">Pass</div>
+    </div>
+  </div>
+
+  <h2>Thesis</h2>
+  <p class="prose">
+    DigitalOcean is the "simple cloud" for developers and SMBs — Droplets, App Platform, managed databases, managed Kubernetes, and Spaces — serving the long tail of builders who want infrastructure without AWS complexity. The company has carved out a durable niche as the "not hyperscaler" option: predictable pricing, clear docs, and a developer-first UX that wins when startups and indie hackers outgrow hobby platforms.
+  </p>
+  <p class="prose">
+    The catalyst: <strong>AI/ML workloads</strong> — inference, fine-tuning, and training pipelines are increasingly run on GPU instances. DOCN has added GPU Droplets and App Platform support for AI apps. As the AI build wave moves from early adopters to the broader developer base, DOCN's simplicity and price transparency position it as a natural landing spot for teams that don't want to navigate AWS's 200+ services. At 8.4x P/S vs. Cloudflare at 33x, the market is still pricing DOCN as a slower-growth cloud. If AI adoption accelerates in the SMB segment, DOCN could re-rate.
+  </p>
+
+  <div id="paywall" class="paywall-gate">
+    <div class="paywall-blur">
+
+      <h2>4P Framework</h2>
+      <div class="four-p">
+        <div class="four-p-item">
+          <div class="four-p-label">People</div>
+          <div class="four-p-text">CEO Yancey Spruill joined in 2019 from SendGrid and has led the IPO and pivot to profitability. He's focused on land-and-expand: win developers with simple products, then upsell managed services. CFO Matt Steinfort is disciplined on cost structure. Insider ownership is meaningful; management has skin in the game. No major governance red flags.</div>
+        </div>
+        <div class="four-p-item">
+          <div class="four-p-label">Product</div>
+          <div class="four-p-text">Core product: Droplets (VMs), App Platform (PaaS), managed databases (Postgres, Redis, Kafka), Spaces (S3-compatible object storage), managed Kubernetes. The stack is intentionally narrow — no 200 services, just what developers need. GPU Droplets for AI/ML workloads are a recent addition. Pricing is transparent and predictable; no surprise bills. NPS is high among developers.</div>
+        </div>
+        <div class="four-p-item">
+          <div class="four-p-label">Potential</div>
+          <div class="four-p-text">Revenue growth has been in the mid-teens. The AI/ML segment is early but growing — DOCN is well-positioned for inference workloads that don't need hyperscale. International expansion (India, Singapore) adds TAM. SMB cloud spend is growing faster than enterprise in some segments. If DOCN captures even a small share of the AI builder wave, growth could accelerate. Analysts see ~20% revenue growth in 2026.</div>
+        </div>
+        <div class="four-p-item">
+          <div class="four-p-label">Predictability</div>
+          <div class="four-p-text">Mixed. Developer-focused customers are sticky but can be price-sensitive. Churn is manageable; net revenue retention is solid. The shift to managed services (higher-margin) improves unit economics over time. Competition from AWS Lightsail, GCP, and smaller players (Linode, Vultr) is real but DOCN has differentiated on simplicity. Margins are improving; path to sustained profitability is visible.</div>
+        </div>
+      </div>
+
+      <h2>Key Catalyst</h2>
+      <div class="catalyst">
+        <div class="catalyst-title">AI Build Wave — GPU & App Platform</div>
+        <p>DigitalOcean has added GPU Droplets and App Platform support for AI apps. As the AI build wave moves from early adopters (who use hyperscalers) to the broader developer base, DOCN's simplicity becomes a selling point. Teams building AI apps want predictable pricing, clear docs, and a path from prototype to production. DOCN's developer-first positioning and transparent pricing could capture share as AI workloads proliferate.</p>
+      </div>
+
+      <h2>Valuation Context</h2>
+      <p class="prose">
+        Cloudflare (NET) trades at 33x P/S with negative GAAP earnings. Akamai (AKAM) at 3.8x as a legacy CDN being repriced. DOCN at 8.4x after a strong YTD run — the multiple reflects the "simple cloud" narrative but not yet AI upside. If AI/ML becomes a meaningful revenue driver, DOCN could justify 10–12x P/S. If growth stays mid-teens, the current multiple is fair. The key is whether AI adoption accelerates in the SMB segment.
+      </p>
+
+      <h2>Trade Setup</h2>
+      <div class="trade-box">
+        <h3>Long on Strength or Pullback</h3>
+        <div class="trade-row">
+          <div class="trade-label">Best Idea</div>
+          <div class="trade-text">Add on pullback to $65–70. Stock has run; wait for consolidation or a broader selloff. Alternatively, if DOCN breaks above $80 on volume, momentum could extend. Use options to define risk.</div>
+        </div>
+        <div class="trade-row">
+          <div class="trade-label">Bear Case</div>
+          <div class="trade-text">Hyperscalers bundle simple cloud into their AI offerings (e.g. AWS Lightsail, GCP Cloud Run). DOCN gets squeezed by price competition and feature parity. Developers consolidate on fewer platforms.</div>
+        </div>
+        <div class="trade-row">
+          <div class="trade-label">Invalidation</div>
+          <div class="trade-text">Daily close below $55 (key support). Also invalidated if revenue growth decelerates below 10% or net revenue retention drops below 110%.</div>
+        </div>
+        <div class="trade-row">
+          <div class="trade-label">China Risk</div>
+          <div class="trade-text">Minimal. US-focused cloud; no material China revenue or supply chain dependency. PASS.</div>
+        </div>
+      </div>
+
+      <div class="pure-play">
+        <div class="pure-play-label">Simple Cloud for the AI Build</div>
+        <div class="pure-play-ticker">DOCN</div>
+      </div>
+
+      <div class="disclaimer">
+        This report is for informational purposes only and does not constitute investment advice. The author may hold positions in securities discussed. Past performance does not guarantee future results. Do your own due diligence.
+      </div>
+
+    </div>
+
+    <div class="paywall-overlay">
+      <div class="paywall-card">
+        <h3>Unlock Full Report</h3>
+        <p>Get the complete 4P analysis, trade setup with specific strikes, catalyst timeline, valuation comps, and bear case.</p>
+        <div class="paywall-price">$6</div>
+        <div class="paywall-price-sub">One-time purchase · Permanent access</div>
+        <button class="paywall-btn" id="buy-btn" onclick="handlePurchase()">Buy This Report</button>
+        <div class="paywall-features">Secure payment via Stripe · Instant access · No subscription</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  (function() {
+    var pathParts = window.location.pathname.split('/').filter(Boolean);
+    var REPORT_ID = pathParts[pathParts.length - 1] || 'docn-simple-cloud-platform';
+
+    function checkAccess() {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get('token');
+
+      if (token) {
+        fetch('/api/verify-report-access?session_id=' + encodeURIComponent(token) + '&report_id=' + encodeURIComponent(REPORT_ID))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.access) {
+              unlockReport();
+              localStorage.setItem('report_' + REPORT_ID, token);
+            }
+          })
+          .catch(function() {});
+      } else {
+        var saved = localStorage.getItem('report_' + REPORT_ID);
+        if (saved) {
+          fetch('/api/verify-report-access?session_id=' + encodeURIComponent(saved) + '&report_id=' + encodeURIComponent(REPORT_ID))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data.access) unlockReport();
+            })
+            .catch(function() {});
+        }
+      }
+    }
+
+    function unlockReport() {
+      document.getElementById('paywall').classList.add('unlocked');
+    }
+
+    window.handlePurchase = function() {
+      var btn = document.getElementById('buy-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+      fetch('/api/checkout-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({report_id: REPORT_ID})
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            if (btn) { btn.disabled = false; btn.textContent = 'Buy This Report'; }
+            alert(data.error || 'Checkout failed');
+          }
+        })
+        .catch(function() {
+          if (btn) { btn.disabled = false; btn.textContent = 'Buy This Report'; }
+          alert('Checkout failed');
+        });
+    };
+
+    checkAccess();
+  })();
+</script>
+
+</body>
+</html>
